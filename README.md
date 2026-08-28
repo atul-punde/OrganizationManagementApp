@@ -47,6 +47,10 @@ src/
   App.css                          Styling
 ```
 
+<img width="2032" height="1082" alt="typescript-assgn" src="https://github.com/user-attachments/assets/8377f4e1-a534-4b5e-9097-09606b6e1d7f" />
+
+
+
 ## How It Works
 
 1. **OrgContext** (at app root) provides global state via React Context
