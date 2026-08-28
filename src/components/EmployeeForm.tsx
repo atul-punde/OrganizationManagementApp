@@ -48,8 +48,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ editingId, onDone }) => {
   }, [editingId, getEmployee]);
 
   const handleChange =
-    (field: keyof FormState) => (ev: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      setForm((prev) => ({ ...prev, [field]: ev.target.value }));
+    (field: keyof FormState) => (ev: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
+        setForm((prev) => ({ ...prev, [field]: ev.target.value }));
     };
 
   // Builds a brand-new Employee (always starts with empty reportees)
@@ -87,7 +87,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ editingId, onDone }) => {
     return patch as unknown as Partial<Employee>;
   };
 
-  const handleSubmit = (ev: React.FormEvent) => {
+  const handleSubmit = (ev: React.FormEvent): void => {
     ev.preventDefault();
     const result = editingId ? updateEmployee(editingId, buildPatch()) : addEmployee(buildNewEmployee());
     if (result.success) {

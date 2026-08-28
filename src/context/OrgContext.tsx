@@ -47,7 +47,7 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [refresh]
   );
 
-  const getEmployee = useCallback((id: string) => service.getEmployee(id), []);
+  const getEmployee = useCallback((id: string): OrgResult<Employee> => service.getEmployee(id), []);
 
   const value = useMemo<OrgContextValue>(
     () => ({ employees, addEmployee, updateEmployee, deleteEmployee, getEmployee }),

@@ -9,7 +9,7 @@ interface EmployeeListProps {
 const EmployeeList: React.FC<EmployeeListProps> = ({ onEdit }) => {
   const { employees, deleteEmployee } = useOrg();
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: string): void => {
     const result = deleteEmployee(id);
     if (!result.success) alert(result.errors.join("\n"));
   };

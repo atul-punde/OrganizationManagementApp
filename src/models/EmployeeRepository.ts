@@ -5,7 +5,7 @@ import { Employee, EmployeeDirectory, Designation } from "../types/employee.type
 // ============================================================
 function LogOperation(_target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
   const original = descriptor.value;
-  descriptor.value = function (this: unknown, ...args: unknown[]) {
+  descriptor.value = function (this: unknown, ...args: unknown[]): [boolean, string[]] {
     console.log(`[EmployeeRepository] ${propertyKey}(${args.map((a) => JSON.stringify(a)).join(", ")})`);
     return original.apply(this, args);
   };
