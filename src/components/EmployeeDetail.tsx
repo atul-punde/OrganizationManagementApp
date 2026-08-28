@@ -8,17 +8,18 @@ const EmployeeDetail: React.FC = () => {
 
   return (
     <div className="employee-detail">
-      <h3>Find Employee by ID</h3>
+      <h2>Find Employee by ID</h2>
       <input
+        className="detail-search"
         value={searchId}
         onChange={(e) => setSearchId(e.target.value)}
         placeholder="Enter employee id"
       />
       {result &&
         (result.success ? (
-          <pre>{JSON.stringify(result.data, null, 2)}</pre>
+          <pre className="detail-result">{JSON.stringify(result.data, null, 2)}</pre>
         ) : (
-          <p className="error">{result.errors[0]}</p>
+          <p className="error-list">{result.errors[0]}</p>
         ))}
     </div>
   );

@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { useOrg } from "../context/OrgContext";
-import { Designation, Employee, DateOfBirth, reportsToDesignationMap } from "../types/employee.types";
+import { Designation, Employee, reportsToDesignationMap } from "../types/employee.types";
 import { assertNever } from "../utils/typeGuards";
+import { formatDateToDOB, parseDOBToDate } from "../utils/dateUtils";
 
 interface EmployeeFormProps {
   editingId?: string | null;
@@ -27,11 +30,13 @@ const emptyForm: FormState = {
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ editingId, onDone }) => {
   const { getEmployee, addEmployee, updateEmployee } = useOrg();
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
 
   useEffect(() => {
     if (!editingId) {
       setForm(emptyForm);
+      setSelectedDate(null);
       return;
     }
     const result = getEmployee(editingId);
@@ -44,20 +49,26 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ editingId, onDone }) => {
         designation: e.designation,
         reportsTo: e.designation === Designation.CEO ? "" : e.reportsTo,
       });
+      setSelectedDate(parseDOBToDate(e.dateOfBirth));
     }
   }, [editingId, getEmployee]);
 
   const handleChange =
-    (field: keyof FormState) => (ev: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
-        setForm((prev) => ({ ...prev, [field]: ev.target.value }));
+    (field: keyof FormState) =>
+    (ev: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
+      setForm((prev) => ({ ...prev, [field]: ev.target.value }));
     };
 
-  // Builds a brand-new Employee (always starts with empty reportees)
+  const handleDateChange = (date: Date | null): void => {
+    setSelectedDate(date);
+    setForm((prev) => ({ ...prev, dateOfBirth: date ? formatDateToDOB(date) : "" }));
+  };
+
   const buildNewEmployee = (): Employee => {
     const base = {
       id: form.id.trim(),
       name: form.name.trim(),
-      dateOfBirth: form.dateOfBirth as DateOfBirth,
+      dateOfBirth: form.dateOfBirth as Employee["dateOfBirth"],
     };
     switch (form.designation) {
       case Designation.CEO:
@@ -75,12 +86,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ editingId, onDone }) => {
     }
   };
 
-  // Builds a patch for an existing employee — reportees are never touched here,
-  // they're maintained internally by OrgService.
   const buildPatch = (): Partial<Employee> => {
     const patch = {
       name: form.name.trim(),
-      dateOfBirth: form.dateOfBirth as DateOfBirth,
+      dateOfBirth: form.dateOfBirth,
       designation: form.designation,
       reportsTo: form.designation === Designation.CEO ? null : form.reportsTo.trim(),
     };
@@ -89,10 +98,17 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ editingId, onDone }) => {
 
   const handleSubmit = (ev: React.FormEvent): void => {
     ev.preventDefault();
+
+    if (!selectedDate) {
+      setErrors(["Please select a date of birth"]);
+      return;
+    }
+
     const result = editingId ? updateEmployee(editingId, buildPatch()) : addEmployee(buildNewEmployee());
     if (result.success) {
       setErrors([]);
       setForm(emptyForm);
+      setSelectedDate(null);
       onDone();
     } else {
       setErrors(result.errors);
@@ -101,25 +117,40 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ editingId, onDone }) => {
 
   return (
     <form className="employee-form" onSubmit={handleSubmit}>
+      <div className="form-header">
+        <h2>{editingId ? "Edit Employee" : "Add Employee"}</h2>
+        {editingId && <span className="badge badge--editing">Editing: {editingId}</span>}
+      </div>
+
       <label>
-        ID
+        <span className="label-text">ID</span>
         <input value={form.id} onChange={handleChange("id")} disabled={!!editingId} required />
       </label>
+
       <label>
-        Name
+        <span className="label-text">Name</span>
         <input value={form.name} onChange={handleChange("name")} required />
       </label>
+
       <label>
-        Date of Birth (mm/dd/yyyy)
-        <input
-          value={form.dateOfBirth}
-          onChange={handleChange("dateOfBirth")}
-          placeholder="01/31/1995"
+        <span className="label-text">Date of Birth</span>
+        <DatePicker
+          selected={selectedDate}
+          onChange={handleDateChange}
+          dateFormat="MM/dd/yyyy"
+          placeholderText="Select date of birth"
+          maxDate={new Date()}
+          showMonthDropdown
+          showYearDropdown
+          dropdownMode="select"
+          className="date-input"
+          wrapperClassName="date-input-wrapper"
           required
         />
       </label>
+
       <label>
-        Designation
+        <span className="label-text">Designation</span>
         <select value={form.designation} onChange={handleChange("designation")}>
           {Object.values(Designation).map((d) => (
             <option key={d} value={d}>
@@ -128,17 +159,22 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ editingId, onDone }) => {
           ))}
         </select>
       </label>
+
       {form.designation !== Designation.CEO && (
         <label>
-          Reports To (must be a {reportsToDesignationMap[form.designation]})
+          <span className="label-text">
+            Reports To <em>(must be a {reportsToDesignationMap[form.designation]})</em>
+          </span>
           <input value={form.reportsTo} onChange={handleChange("reportsTo")} required />
         </label>
       )}
 
-      <button type="submit">{editingId ? "Update" : "Add"} Employee</button>
+      <button type="submit" className="btn btn--primary">
+        {editingId ? "Update Employee" : "Add Employee"}
+      </button>
 
       {errors.length > 0 && (
-        <ul className="error">
+        <ul className="error-list">
           {errors.map((err) => (
             <li key={err}>{err}</li>
           ))}

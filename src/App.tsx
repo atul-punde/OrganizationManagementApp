@@ -11,22 +11,32 @@ const App: React.FC = () => {
   return (
     <OrgProvider>
       <div className="app">
-        <h1>Organization Management</h1>
+        <header className="app-header">
+          <h1>Organization Management</h1>
+          <p className="app-subtitle">Manage employees across your reporting hierarchy</p>
+        </header>
 
-        <section>
-          <h2>{editingId ? `Edit Employee: ${editingId}` : "Add Employee"}</h2>
-          <EmployeeForm editingId={editingId} onDone={() => setEditingId(null)} />
-          {editingId && <button onClick={() => setEditingId(null)}>Cancel Edit</button>}
-        </section>
+        <div className="app-grid">
+          <section className="panel panel--form">
+            <EmployeeForm editingId={editingId} onDone={() => setEditingId(null)} />
+            {editingId && (
+              <button className="btn btn--ghost btn--full" onClick={() => setEditingId(null)}>
+                Cancel Edit
+              </button>
+            )}
+          </section>
 
-        <section>
-          <h2>All Employees</h2>
-          <EmployeeList onEdit={setEditingId} />
-        </section>
+          <section className="panel panel--list">
+            <div className="panel-header">
+              <h2>All Employees</h2>
+            </div>
+            <EmployeeList onEdit={setEditingId} />
+          </section>
 
-        <section>
-          <EmployeeDetail />
-        </section>
+          <section className="panel panel--detail">
+            <EmployeeDetail />
+          </section>
+        </div>
       </div>
     </OrgProvider>
   );

@@ -1,15 +1,241 @@
-body { font-family: system-ui, sans-serif; background: #f5f6f8; margin: 0; }
-.app { max-width: 900px; margin: 0 auto; padding: 24px; }
-h1 { margin-bottom: 8px; }
-section { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+/* ============ Design Tokens ============ */
+:root {
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-light: #eef2ff;
+  --color-accent: #0d9488;
+  --color-danger: #dc2626;
+  --color-danger-light: #fee2e2;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-bg: #f4f5f9;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --radius: 10px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+}
 
-.employee-form { display: flex; flex-direction: column; gap: 10px; max-width: 400px; }
-.employee-form label { display: flex; flex-direction: column; font-size: 14px; gap: 4px; }
-.employee-form input, .employee-form select { padding: 6px 8px; font-size: 14px; }
-.employee-form button { margin-top: 8px; padding: 8px; cursor: pointer; }
+* { box-sizing: border-box; }
 
-.employee-table { width: 100%; border-collapse: collapse; }
-.employee-table th, .employee-table td { border: 1px solid #ddd; padding: 6px 8px; font-size: 14px; text-align: left; }
-.employee-table button { margin-right: 6px; cursor: pointer; }
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  margin: 0;
+}
 
-.error { color: #c0392b; font-size: 13px; }
+.app { max-width: 1265px; margin: 0 auto; padding: 32px 24px 48px; }
+
+.app-header { margin-bottom: 24px; }
+.app-header h1 { margin: 0 0 4px; font-size: 28px; color: var(--color-text); }
+.app-subtitle { margin: 0; color: var(--color-text-muted); font-size: 14px; }
+
+/* ============ Responsive Two-Column Grid ============ */
+.app-grid {
+  display: grid;
+  grid-template-columns: 250px 1fr 272px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .app-grid { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.panel--form { position: sticky; top: 24px; }
+@media (max-width: 900px) {
+  .panel--form { position: static; }
+}
+
+.panel-header { margin-bottom: 12px; }
+.panel-header h2 { margin: 0; font-size: 18px; color: var(--color-text); }
+
+/* ============ Form ============ */
+.employee-form { display: flex; flex-direction: column; gap: 14px; }
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  border-bottom: 2px solid var(--color-primary-light);
+}
+.form-header h2 { margin: 0; font-size: 18px; color: var(--color-primary); }
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+.badge--editing { background: var(--color-primary-light); color: var(--color-primary); }
+
+.employee-form label { display: flex; flex-direction: column; font-size: 13px; gap: 6px; }
+.label-text { font-weight: 600; color: var(--color-text); }
+.label-text em { font-weight: 400; color: var(--color-text-muted); font-style: normal; font-size: 12px; }
+
+.employee-form input,
+.employee-form select,
+.date-input {
+  padding: 9px 10px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.employee-form input:focus,
+.employee-form select:focus,
+.date-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.employee-form input:disabled { background: #f3f4f6; color: var(--color-text-muted); }
+
+.date-input-wrapper { width: 100%; }
+
+/* ============ Buttons ============ */
+.btn {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn--full { width: 100%; margin-top: 8px; }
+
+.btn--primary { background: var(--color-primary); color: #fff; }
+.btn--primary:hover { background: var(--color-primary-hover); }
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary-light);
+}
+.btn--ghost:hover { background: var(--color-primary-light); }
+
+.btn--danger {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+.btn--danger:hover { background: var(--color-danger); color: #fff; }
+
+.actions-cell { display: flex; gap: 8px; }
+
+/* ============ Table ============ */
+.table-wrapper { overflow-x: auto; }
+
+.employee-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+.employee-table thead th {
+  background: var(--color-primary);
+  color: #fff;
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+.employee-table thead th:first-child { border-top-left-radius: 8px; }
+.employee-table thead th:last-child { border-top-right-radius: 8px; }
+
+.employee-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.employee-table tbody tr:hover { background: var(--color-primary-light); }
+
+.empty-state { color: var(--color-text-muted); font-size: 14px; padding: 12px 0; }
+
+/* ============ Designation Pills (status indicators) ============ */
+.pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pill--engineer { background: #e0f2fe; color: #0369a1; }
+.pill--lead { background: #dcfce7; color: #15803d; }
+.pill--manager { background: #fef9c3; color: #a16207; }
+.pill--director { background: #fee2e2; color: #b91c1c; }
+.pill--ceo { background: #ede9fe; color: #6d28d9; }
+
+/* ============ Errors ============ */
+.error-list {
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--color-danger-light);
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+/* ============ Detail Search ============ */
+.employee-detail h2 { margin: 0 0 12px; font-size: 18px; color: var(--color-text); }
+.detail-search {
+  padding: 9px 10px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 12px;
+}
+.detail-search:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+.detail-result {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+/* ============ Datepicker Theming (react-datepicker overrides) ============ */
+.react-datepicker__header {
+  background-color: var(--color-primary);
+}
+.react-datepicker__current-month,
+.react-datepicker__day-name,
+.react-datepicker-time__header {
+  color: #fff;
+}
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: var(--color-primary);
+}
+.react-datepicker__day--selected:hover,
+.react-datepicker__day--keyboard-selected:hover {
+  background-color: var(--color-primary-hover);
+}
+.react-datepicker__day:hover {
+  background-color: var(--color-primary-light);
+}
