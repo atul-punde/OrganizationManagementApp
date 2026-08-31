@@ -18,7 +18,7 @@ const service = new OrgService(repo);
 
 export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [employees, setEmployees] = useState<Employee[]>(() => service.getAllEmployees());
-  const refresh = useCallback(() => setEmployees(service.getAllEmployees()), []);
+  const refresh = useCallback((): void => setEmployees(service.getAllEmployees()), []);
 
   const addEmployee = useCallback(
     (e: Employee): OrgResult => {

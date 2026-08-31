@@ -1,14 +1,13 @@
 import { EmployeeRepository } from "../models/EmployeeRepository";
 import { Employee, Designation, reportsToDesignationMap } from "../types/employee.types";
-import { isValidDate } from "../utils/typeGuards";
+import { validateDateField, logValidation, makeError } from "../utils/typeGuards";
 
-// Discriminated union result type used across the whole service layer
 export type OrgResult<T = void> =
   | { success: true; data: T }
   | { success: false; errors: string[] };
 
 export class OrgService {
-  constructor(private readonly repo: EmployeeRepository) {} // private parameter property
+  constructor(private readonly repo: EmployeeRepository) {}
 
   public getAllEmployees(): Employee[] {
     return this.repo.getAll();
@@ -18,32 +17,39 @@ export class OrgService {
     const employee = this.repo.getById(id);
     return employee
       ? { success: true, data: employee }
-      : { success: false, errors: [`No employee found with id "${id}"`] };
+      : { success: false, errors: [makeError("id", `No employee found with id "${id}"`).message] };
   }
 
   private validateHierarchy(employee: Employee): string[] {
     const errors: string[] = [];
 
     if (employee.designation === Designation.CEO) {
-      if (employee.reportsTo !== null) errors.push("CEO must not report to anyone");
+      if (employee.reportsTo !== null) errors.push(makeError("reportsTo", "CEO must not report to anyone").message);
       return errors;
     }
 
     if (!employee.reportsTo?.trim()) {
-      errors.push("reportsTo is required for non-CEO employees");
+      errors.push(makeError("reportsTo is required for non-CEO employees").message);
       return errors;
     }
 
-    const manager = this.repo.getById(employee.reportsTo);
+    // Uses EmployeeRepository.toDirectory() (Index Signature) instead of a
+    // single getById lookup
+    const directory = this.repo.toDirectory();
+    const manager = directory[employee.reportsTo];
     if (!manager) {
-      errors.push(`reportsTo references a non-existent employee id "${employee.reportsTo}"`);
+      errors.push(
+        makeError("reportsTo", `references a non-existent employee id "${employee.reportsTo}"`).message
+      );
       return errors;
     }
 
     const expected = reportsToDesignationMap[employee.designation];
     if (manager.designation !== expected) {
       errors.push(
-        `A ${employee.designation} must report to a ${expected}, but "${manager.name}" is a ${manager.designation}`
+        makeError(
+          `A ${employee.designation} must report to a ${expected}, but "${manager.name}" is a ${manager.designation}`
+        ).message
       );
     }
     return errors;
@@ -51,8 +57,11 @@ export class OrgService {
 
   public addEmployee(employee: Employee): OrgResult {
     const errors: string[] = [];
-    if (!isValidDate(employee.dateOfBirth)) errors.push("dateOfBirth must be in mm/dd/yyyy format");
+    const [dobValid, dobErrors] = validateDateField(employee.dateOfBirth);
+    if (!dobValid) errors.push(...dobErrors);
     errors.push(...this.validateHierarchy(employee));
+
+    logValidation("addEmployee", [errors.length === 0, errors]);
     if (errors.length > 0) return { success: false, errors };
 
     const [saved, repoErrors] = this.repo.add(employee);
@@ -66,14 +75,16 @@ export class OrgService {
 
   public updateEmployee(id: string, patch: Partial<Employee>): OrgResult {
     const existing = this.repo.getById(id);
-    if (!existing) return { success: false, errors: [`No employee found with id "${id}"`] };
+    if (!existing) return { success: false, errors: [makeError("id", `No employee found with id "${id}"`).message] };
 
-    if (patch.dateOfBirth && !isValidDate(patch.dateOfBirth)) {
-      return { success: false, errors: ["dateOfBirth must be in mm/dd/yyyy format"] };
+    if (patch.dateOfBirth) {
+      const [dobValid, dobErrors] = validateDateField(patch.dateOfBirth);
+      if (!dobValid) return { success: false, errors: dobErrors };
     }
 
     const merged = { ...existing, ...patch, id: existing.id } as Employee;
     const hierarchyErrors = this.validateHierarchy(merged);
+    logValidation("updateEmployee", [hierarchyErrors.length === 0, hierarchyErrors]);
     if (hierarchyErrors.length > 0) return { success: false, errors: hierarchyErrors };
 
     const [ok, errors] = this.repo.update(id, merged);
@@ -88,7 +99,7 @@ export class OrgService {
 
   public deleteEmployee(id: string): OrgResult {
     const existing = this.repo.getById(id);
-    if (!existing) return { success: false, errors: [`No employee found with id "${id}"`] };
+    if (!existing) return { success: false, errors: [makeError("id", `No employee found with id "${id}"`).message] };
 
     const [ok, errors] = this.repo.remove(id);
     if (!ok) return { success: false, errors };

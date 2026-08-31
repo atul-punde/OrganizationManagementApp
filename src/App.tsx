@@ -32,11 +32,11 @@ const App: React.FC = () => {
             </div>
             <EmployeeList onEdit={setEditingId} />
           </section>
-
-          <section className="panel panel--detail">
-            <EmployeeDetail />
-          </section>
         </div>
+
+        <section className="panel panel--detail">
+          <EmployeeDetail />
+        </section>
       </div>
     </OrgProvider>
   );

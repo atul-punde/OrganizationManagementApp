@@ -10,35 +10,15 @@ import {
 } from "../types/employee.types";
 
 // ============================================================
-// NEVER — exhaustiveness guard. If a new Designation is ever added
-// and a switch forgets to handle it, this line fails to compile.
+// NEVER — exhaustiveness guard.
 // ============================================================
 export function assertNever(x: never): never {
   throw new Error(`Unhandled case: ${JSON.stringify(x)}`);
 }
 
 // ============================================================
-// TOP TYPES: any / unknown
-// ============================================================
-export function legacyParse(raw: any): unknown {
-  // `any` disables checking entirely — used only at an untyped boundary,
-  // then immediately handed off as `unknown` so callers are forced to narrow it.
-  return raw;
-}
-
-export function isRecordLike(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-// ============================================================
-// TYPE ASSERTIONS
-// ============================================================
-export function toEmployeeUnsafe(value: unknown): Employee {
-  return value as Employee; // trust the caller (e.g. our own storage layer)
-}
-
-// ============================================================
 // TYPE NARROWING via discriminated union (user-defined type guards)
+// Used in EmployeeDetail.tsx for role-specific rendering.
 // ============================================================
 export function isEngineer(e: Employee): e is EngineerEmployee {
   return e.designation === Designation.Engineer;
@@ -56,35 +36,40 @@ export function isCEO(e: Employee): e is CEOEmployee {
   return e.designation === Designation.CEO;
 }
 
-// Exhaustive switch narrowing on the discriminant + `never` guard
+// Used in EmployeeDetail.tsx to render a human-readable summary line.
 export function describeEmployee(e: Employee): string {
   switch (e.designation) {
     case Designation.Engineer:
-      return `${e.name} (Engineer) reports to ${e.reportsTo}`;
+      return `${e.name} is an Engineer reporting to ${e.reportsTo}`;
     case Designation.Lead:
-      return `${e.name} (Lead) manages ${e.reportees.length} engineer(s)`;
+      return `${e.name} is a Lead managing ${e.reportees.length} engineer(s)`;
     case Designation.Manager:
-      return `${e.name} (Manager) manages ${e.reportees.length} lead(s)`;
+      return `${e.name} is a Manager managing ${e.reportees.length} lead(s)`;
     case Designation.Director:
-      return `${e.name} (Director) manages ${e.reportees.length} manager(s)`;
+      return `${e.name} is a Director managing ${e.reportees.length} manager(s)`;
     case Designation.CEO:
-      return `${e.name} (CEO) oversees ${e.reportees.length} director(s)`;
+      return `${e.name} is the CEO overseeing ${e.reportees.length} director(s)`;
     default:
       return assertNever(e);
   }
 }
 
 // ============================================================
-// FUNCTION TYPE EXPRESSION
+// FUNCTION TYPE EXPRESSION — used to type the dateOfBirth validator
 // ============================================================
 export type Validator<T> = (value: T) => ValidationResult;
 
+export const validateDateField: Validator<string> = (value) => {
+  const isValid = isValidDate(value);
+  return [isValid, isValid ? [] : ["dateOfBirth must be in mm/dd/yyyy format"]];
+};
+
 // ============================================================
-// CALL SIGNATURE — an object that is itself callable AND carries properties
+// CALL SIGNATURE — callable object that also carries a property
 // ============================================================
 export interface DateValidatorFn {
-  (raw: string): boolean;   // call signature
-  description: string;      // functions are objects — they can have properties
+  (raw: string): boolean;
+  description: string;
 }
 
 export const isValidDate: DateValidatorFn = Object.assign(
@@ -102,24 +87,15 @@ export const isValidDate: DateValidatorFn = Object.assign(
 );
 
 // ============================================================
-// CONSTRUCT SIGNATURE — describes something invokable with `new`
-// ============================================================
-export interface Newable<T> {
-  new (...args: any[]): T;
-}
-export function createInstance<T>(Ctor: Newable<T>, ...args: any[]): T {
-  return new Ctor(...args);
-}
-
-// ============================================================
-// VOID
+// VOID — used by OrgService to log rejected operations
 // ============================================================
 export function logValidation(context: string, result: ValidationResult): void {
   if (!result[0]) console.warn(`[${context}]`, result[1]);
 }
 
 // ============================================================
-// FUNCTION OVERLOADS
+// FUNCTION OVERLOADS — used by OrgService to build field-specific
+// or generic errors
 // ============================================================
 export function makeError(message: string): Error;
 export function makeError(field: string, message: string): Error;
@@ -128,22 +104,8 @@ export function makeError(a: string, b?: string): Error {
 }
 
 // ============================================================
-// GENERIC FUNCTIONS + INFERENCE (T is inferred from the `items` argument —
-// callers never need to write findById<Employee>(...))
+// GENERIC FUNCTIONS + INFERENCE — used by EmployeeRepository lookups
 // ============================================================
 export function findById<T extends { id: string }>(items: T[], id: string): T | undefined {
   return items.find((item) => item.id === id);
-}
-
-// GENERIC OBJECTS / GENERIC ARRAYS combined
-export function groupBy<T, K extends string | number>(
-  items: T[],
-  keyFn: (item: T) => K
-): Record<K, T[]> {
-  const result = {} as Record<K, T[]>;
-  for (const item of items) {
-    const key = keyFn(item);
-    (result[key] ??= []).push(item); // nullish-coalescing assignment
-  }
-  return result;
 }

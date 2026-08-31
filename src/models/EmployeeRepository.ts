@@ -1,8 +1,6 @@
 import { Employee, EmployeeDirectory, Designation } from "../types/employee.types";
+import { findById } from "../utils/typeGuards";
 
-// ============================================================
-// DECORATOR — logs every call made to a repository method
-// ============================================================
 function LogOperation(_target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
   const original = descriptor.value;
   descriptor.value = function (this: unknown, ...args: unknown[]): [boolean, string[]] {
@@ -12,21 +10,17 @@ function LogOperation(_target: any, propertyKey: string, descriptor: PropertyDes
   return descriptor;
 }
 
-// ============================================================
-// ABSTRACT CLASS + GENERIC CLASS
-// ============================================================
 export abstract class BaseRepository<T extends { id: string }> {
-  #store: Map<string, T> = new Map(); // JS PRIVATE FIELD — true encapsulation, not just a TS `private`
+  #store: Map<string, T> = new Map();
 
-  // CONSTRUCTOR + PARAMETER PROPERTY (protected + readonly, declared and assigned in one place)
-  protected constructor(protected readonly entityName: string) {}
+  protected constructor() {}
 
   public getAll(): T[] {
     return Array.from(this.#store.values());
   }
 
   public getById(id: string): T | undefined {
-    return this.#store.get(id);
+    return findById(this.getAll(), id);
   }
 
   protected save(entity: T): void {
@@ -41,28 +35,20 @@ export abstract class BaseRepository<T extends { id: string }> {
     return this.#store.has(id);
   }
 
-  // ABSTRACT METHOD — every concrete repository must supply its own validation
   public abstract validate(entity: T): [boolean, string[]];
 }
 
-// ============================================================
-// INTERFACE contract for `implements`
-// ============================================================
 export interface CrudOperations<T> {
   add(entity: T): [boolean, string[]];
   update(id: string, patch: Partial<T>): [boolean, string[]];
   remove(id: string): [boolean, string[]];
 }
 
-// ============================================================
-// EXTENDS + IMPLEMENTS
-// ============================================================
 export class EmployeeRepository extends BaseRepository<Employee> implements CrudOperations<Employee> {
-  // CONSTRUCTOR OVERLOADS
   constructor();
   constructor(seed: Employee[]);
   constructor(seed?: Employee[]) {
-    super("Employee");
+    super();
     seed?.forEach((e) => this.save(e));
   }
 
@@ -93,7 +79,7 @@ export class EmployeeRepository extends BaseRepository<Employee> implements Crud
   public update(id: string, patch: Partial<Employee>): [boolean, string[]] {
     const existing = this.getById(id);
     if (!existing) return [false, [`Employee with id "${id}" does not exist`]];
-    const updated = { ...existing, ...patch, id: existing.id } as Employee; // type assertion
+    const updated = { ...existing, ...patch, id: existing.id } as Employee;
     const [isValid, errors] = this.validate(updated);
     if (!isValid) return [false, errors];
     this.save(updated);
@@ -114,6 +100,7 @@ export class EmployeeRepository extends BaseRepository<Employee> implements Crud
     return [true, []];
   }
 
+  // Now consumed by OrgService.validateHierarchy() for reportsTo lookups
   public toDirectory(): EmployeeDirectory {
     return this.getAll().reduce<EmployeeDirectory>((acc, e) => {
       acc[e.id] = e;

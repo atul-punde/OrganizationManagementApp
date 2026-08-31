@@ -239,3 +239,14 @@ body {
 .react-datepicker__day:hover {
   background-color: var(--color-primary-light);
 }
+
+.detail-summary {
+  font-size: 14px;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.detail-tag { font-size: 11px; }
